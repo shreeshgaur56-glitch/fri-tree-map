@@ -1,0 +1,93 @@
+/* Basic page styling */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background-color: #f7f6f2;
+  color: #222;
+  line-height: 1.6;
+}
+
+.site-header {
+  background-color: #e6e4df;
+  border-bottom: 1px solid #d4d1ca;
+}
+
+.site-header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+}
+
+.site-header-inner h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.site-header-inner p {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+.section {
+  padding: 1rem 0;
+}
+
+.section-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-info h2 {
+  margin: 0;
+}
+
+.section-info p {
+  margin: 0;
+  color: #444;
+}
+
+/* Map container */
+
+.map-container {
+  width: 100%;
+  height: 520px;
+  border-radius: 12px;
+  border: 1px solid #d4d1ca;
+  overflow: hidden;
+}
+
+/* Leaflet default container adjustments */
+.leaflet-container {
+  font: inherit;
+}
+
+/* Footer */
+
+.site-footer {
+  padding: 1rem 1.5rem;
+  background-color: #e6e4df;
+  border-top: 1px solid #d4d1ca;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #555;
+}
