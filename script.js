@@ -11,9 +11,9 @@
 //
 // Use the same values that already work in your Softr/Airtable setup.[web:18][web:52][web:63]
 
-const AIRTABLE_BASE_ID = "appe2sseQ12piCWap";
-const AIRTABLE_TABLE_NAME = "Species"; // exact table name
-const AIRTABLE_API_TOKEN = "patme1XZdQghYiGd4.b637eb7325e461d04863f06d75dc2732074b1ab27459f5f950bed2812f37cb40";
+const AIRTABLE_BASE_ID = "app2ZtDcYLBuNUM0f";
+const AIRTABLE_TABLE_NAME = "Location"; // exact table name
+const AIRTABLE_API_TOKEN = "patdC6IkNl0SFQTAY.96592e2cd802d52774805d228ac9a413d1cc9e5a2667f1e4033a8c075d9f5eb2";
 
 // Approximate FRI campus coordinates for map center.[web:77][web:79][web:85]
 const FRI_LAT = 30.343;
