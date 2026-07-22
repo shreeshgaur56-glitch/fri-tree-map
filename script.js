@@ -3,31 +3,32 @@
 // ==========================
 //
 // IMPORTANT:
-// Replace these three values with the real ones from your Airtable:
+// Replace these three values with the real ones from your Airtable base:
 //
 // 1. AIRTABLE_BASE_ID: "app..." (Base ID from Airtable API docs)
-// 2. AIRTABLE_TABLE_NAME: your table name (e.g. "Trees")
+// 2. AIRTABLE_TABLE_NAME: "Location"  (we read locations, not species now)
 // 3. AIRTABLE_API_TOKEN: your personal access token with read-only access
 //
-// Use the same values that already work in your Softr/Airtable setup.[web:18][web:52][web:63]
+// Use the same base and token you already use for Softr.[web:18][web:196]
 
 const AIRTABLE_BASE_ID = "app2ZtDcYLBuNUM0f";
-const AIRTABLE_TABLE_NAME = "Location"; // exact table name
+const AIRTABLE_TABLE_NAME = "Location";
 const AIRTABLE_API_TOKEN = "patdC6IkNl0SFQTAY.96592e2cd802d52774805d228ac9a413d1cc9e5a2667f1e4033a8c075d9f5eb2";
 
-// Approximate FRI campus coordinates for map center.[web:77][web:79][web:85]
+// Approximate FRI campus coordinates for map center.[web:78][web:79][web:85]
 const FRI_LAT = 30.343;
 const FRI_LNG = 78.0015;
 
-// Global storage for records
+// Storage for all location records
 let allRecords = [];
 
 // ==========================
 // Helper: read URL parameter
-// ==========================
+// ===========================
 //
-// Example: https://yourusername.github.io/fri-tree-map/?species=Pinus%20roxburghii
-// getUrlParam("species") will return "Pinus roxburghii"
+// Example:
+//   https://shreeshgaur56-glitch.github.io/fri-tree-map/?species=Pinus%20roxburghii
+// getUrlParam("species") -> "Pinus roxburghii"
 
 function getUrlParam(name) {
   const params = new URLSearchParams(window.location.search);
@@ -49,10 +50,10 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 const treeLayer = L.layerGroup().addTo(map);
 
 // ==========================
-// Fetch records from Airtable
+// Fetch location records from Airtable
 // ==========================
 
-async function loadTreesFromAirtable() {
+async function loadLocationsFromAirtable() {
   if (!AIRTABLE_BASE_ID || !AIRTABLE_API_TOKEN) {
     console.error("You must set AIRTABLE_BASE_ID and AIRTABLE_API_TOKEN in script.js");
     return;
@@ -61,7 +62,7 @@ async function loadTreesFromAirtable() {
   const url =
     `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/` +
     encodeURIComponent(AIRTABLE_TABLE_NAME) +
-    `?pageSize=100&view=Grid%20view`; // adjust view name if needed.[web:18][web:52][web:63]
+    `?pageSize=200&view=Grid%20view`; // adjust view name if needed[web:18][web:196]
 
   try {
     const response = await fetch(url, {
@@ -76,7 +77,7 @@ async function loadTreesFromAirtable() {
     }
 
     const data = await response.json();
-    console.log("Airtable data:", data);
+    console.log("Location table data:", data);
 
     if (!data.records || !Array.isArray(data.records)) {
       console.error("Unexpected Airtable response format");
@@ -85,21 +86,21 @@ async function loadTreesFromAirtable() {
 
     allRecords = data.records;
 
-    // Apply species filter, if any
+    // Apply species filter if ?species=... is present
     const speciesParam = getUrlParam("species");
     let recordsToShow = allRecords;
 
     if (speciesParam) {
+      const target = speciesParam.toLowerCase();
+
       recordsToShow = allRecords.filter(record => {
-        const { species, commonName } = getFields(record);
-        const s = species.toLowerCase();
-        const c = commonName.toLowerCase();
-        const p = speciesParam.toLowerCase();
-        return s === p || c === p;
+        const { speciesName } = getFields(record);
+        if (!speciesName) return false;
+        return speciesName.toLowerCase() === target;
       });
 
       if (recordsToShow.length === 0) {
-        console.warn("No records found for species:", speciesParam);
+        console.warn("No locations found for species:", speciesParam);
       }
     }
 
@@ -110,56 +111,50 @@ async function loadTreesFromAirtable() {
 }
 
 // ==========================
-// Helper: extract fields
+// Helper: extract fields from Location record
 // ==========================
+//
+// Location table fields (based on your description):
+// - Location ID (optional)
+// - Linked Species (linked field to Species table)
+// - Location Description
+// - Latitude
+// - Longitude
+// - LatLong (combined text, not needed here)
+// - Species name (lookup of species name from Species table)  <-- we added this
 
 function getFields(record) {
   const fields = record.fields || {};
 
-  const species =
-    fields.Species ||
-    fields["Scientific name"] ||
-    fields["Species name"] ||
-    "Unnamed species";
+  // Species name from lookup field (may be string or array)
+  let speciesName = "";
+  const lookup = fields["Species name"];
+  if (lookup) {
+    if (Array.isArray(lookup) && lookup.length > 0) {
+      speciesName = lookup[0];
+    } else if (typeof lookup === "string") {
+      speciesName = lookup;
+    }
+  }
 
-  const family =
-    fields.Family ||
-    fields["Botanical family"] ||
-    "Unknown family";
-
-  const commonName =
-    fields["Common name"] ||
-    fields["Common Name"] ||
-    "";
-
-  const origin =
-    fields.Origin ||
-    fields["Origin category"] ||
-    "";
-
-  const uses =
-    fields.Uses ||
-    fields["Tree uses"] ||
+  const locationDescription =
+    fields["Location Description"] ||
+    fields["Location description"] ||
     "";
 
   const lat =
     fields.Latitude ||
-    fields.Lat ||
-    fields.lat ||
+    fields["Latitude "] || // just in case of trailing space
     null;
 
   const lng =
     fields.Longitude ||
-    fields.Lng ||
-    fields.lng ||
+    fields["Longitude "] ||
     null;
 
   return {
-    species,
-    family,
-    commonName,
-    origin,
-    uses,
+    speciesName,
+    locationDescription,
     lat,
     lng
   };
@@ -174,11 +169,8 @@ function renderMapMarkers(records) {
 
   records.forEach(record => {
     const {
-      species,
-      family,
-      commonName,
-      origin,
-      uses,
+      speciesName,
+      locationDescription,
       lat,
       lng
     } = getFields(record);
@@ -190,11 +182,8 @@ function renderMapMarkers(records) {
     const marker = L.marker([lat, lng]);
 
     const popupLines = [];
-    popupLines.push(`<strong>${species}</strong>`);
-    if (commonName) popupLines.push(commonName);
-    popupLines.push(family);
-    if (origin) popupLines.push(origin);
-    if (uses) popupLines.push(`<em>${uses}</em>`);
+    if (speciesName) popupLines.push(`<strong>${speciesName}</strong>`);
+    if (locationDescription) popupLines.push(locationDescription);
 
     marker.bindPopup(popupLines.join("<br/>"));
     marker.addTo(treeLayer);
@@ -206,5 +195,5 @@ function renderMapMarkers(records) {
 // ==========================
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadTreesFromAirtable();
+  loadLocationsFromAirtable();
 });
