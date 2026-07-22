@@ -170,7 +170,7 @@ function getFields(record) {
     fields["Longitude "] ||
     null;
 
-  const coverImageUrl = getCoverImageUrl(fields["Cover image"]);
+  const coverImageUrl = getCoverImageUrl(fields["Cover Image"]);
 
   return {
     speciesName,
