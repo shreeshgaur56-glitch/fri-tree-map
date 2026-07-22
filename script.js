@@ -2,8 +2,11 @@
 // Airtable configuration
 // ==========================
 //
-// IMPORTANT: set these three to match your base.
-// Use the same base/token Softr uses, but TABLE is "Location".[web:196]
+// IMPORTANT: Update these three values.[web:196]
+//
+// - AIRTABLE_BASE_ID: "app..." for your base
+// - AIRTABLE_TABLE_NAME: "Location" (locations table)
+// - AIRTABLE_API_TOKEN: personal access token with read-only access
 
 const AIRTABLE_BASE_ID = "app2ZtDcYLBuNUM0f";
 const AIRTABLE_TABLE_NAME = "Location";
@@ -15,7 +18,7 @@ const FRI_LNG = 78.0015;
 
 // Global data
 let allRecords = [];
-let baseRecordsForFiltering = []; // either all records or one species (from URL)
+let baseRecordsForFiltering = []; // all records or single species (from ?species=)
 
 // DOM elements
 let searchInput;
@@ -56,8 +59,7 @@ async function loadLocationsFromAirtable() {
     return;
   }
 
-  // Use a valid view name here. If your Location table's view is not "Grid view",
-  // replace it with the exact view name (spaces allowed).
+  // If your view name is not "Grid view", replace Grid%20view with your view name.
   const url =
     `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/` +
     encodeURIComponent(AIRTABLE_TABLE_NAME) +
@@ -85,7 +87,7 @@ async function loadLocationsFromAirtable() {
 
     allRecords = data.records;
 
-    // Handle ?species=... URL param (botanical name) if present
+    // Handle ?species=... (botanical name)
     const speciesParam = getUrlParam("species");
     baseRecordsForFiltering = allRecords;
 
@@ -101,10 +103,10 @@ async function loadLocationsFromAirtable() {
       }
     }
 
-    // Build dropdown options from the base set
+    // Build dropdown options from base set
     buildFilterOptions(baseRecordsForFiltering);
 
-    // Initial render with no search/filters (except speciesParam)
+    // Initial render
     applyFiltersAndRender();
   } catch (err) {
     console.error("Error fetching from Airtable:", err);
@@ -112,18 +114,8 @@ async function loadLocationsFromAirtable() {
 }
 
 // ==========================
-// Extract fields from one Location record
+// Field extraction helpers
 // ==========================
-//
-// Required fields in Location table:
-// - Species name (lookup from Species table)
-// - Common name (lookup from Species)
-// - Family (lookup from Species)
-// - Potential Use (lookup from Species / Uses)
-// - Origin (lookup from Species)
-// - Location Description
-// - Latitude
-// - Longitude
 
 function normalizeLookup(value) {
   if (!value) return "";
@@ -132,6 +124,19 @@ function normalizeLookup(value) {
   return "";
 }
 
+function getCoverImageUrl(rawField) {
+  // rawField may be an array of attachment objects (from a lookup of attachments)
+  if (!rawField) return null;
+  if (Array.isArray(rawField) && rawField.length > 0 && rawField[0].url) {
+    return rawField[0].url;
+  }
+  if (typeof rawField === "string") {
+    return rawField;
+  }
+  return null;
+}
+
+// Extract fields from a Location record
 function getFields(record) {
   const fields = record.fields || {};
 
@@ -149,7 +154,8 @@ function getFields(record) {
 
   const origin = normalizeLookup(fields["Origin"]);
 
-  const locationDescription =
+  const locationInCampus =
+    fields["Location in campus"] ||
     fields["Location Description"] ||
     fields["Location description"] ||
     "";
@@ -164,15 +170,18 @@ function getFields(record) {
     fields["Longitude "] ||
     null;
 
+  const coverImageUrl = getCoverImageUrl(fields["Cover image"]);
+
   return {
     speciesName,
     commonName,
     family,
     potentialUse,
     origin,
-    locationDescription,
+    locationInCampus,
     lat,
-    lng
+    lng,
+    coverImageUrl
   };
 }
 
@@ -192,7 +201,6 @@ function buildFilterOptions(records) {
     if (origin) origins.add(origin);
   });
 
-  // Helper to populate a select
   function populateSelect(selectEl, values, placeholder) {
     if (!selectEl) return;
     selectEl.innerHTML = "";
@@ -217,7 +225,7 @@ function buildFilterOptions(records) {
 }
 
 // ==========================
-// Apply search + filters and render map
+// Apply search + filters and render
 // ==========================
 
 function applyFiltersAndRender() {
@@ -233,23 +241,18 @@ function applyFiltersAndRender() {
       family,
       potentialUse,
       origin,
-      locationDescription
+      locationInCampus
     } = getFields(record);
 
-    // Search: matches botanical name, common name, or location description
+    // Search on botanical name, common name, or campus location
     if (query) {
       const haystack =
-        (speciesName + " " + commonName + " " + locationDescription).toLowerCase();
+        (speciesName + " " + commonName + " " + locationInCampus).toLowerCase();
       if (!haystack.includes(query)) return false;
     }
 
-    // Family filter
     if (selectedFamily && family !== selectedFamily) return false;
-
-    // Potential Use filter
     if (selectedUse && potentialUse !== selectedUse) return false;
-
-    // Origin filter
     if (selectedOrigin && origin !== selectedOrigin) return false;
 
     return true;
@@ -259,7 +262,7 @@ function applyFiltersAndRender() {
 }
 
 // ==========================
-// Render markers
+// Render markers with popup image + directions
 // ==========================
 
 function renderMapMarkers(records) {
@@ -272,26 +275,71 @@ function renderMapMarkers(records) {
       family,
       potentialUse,
       origin,
-      locationDescription,
+      locationInCampus,
       lat,
-      lng
+      lng,
+      coverImageUrl
     } = getFields(record);
 
-    if (lat == null || lng == null) {
-      return;
-    }
+    if (lat == null || lng == null) return;
 
     const marker = L.marker([lat, lng]);
 
-    const popupLines = [];
-    if (speciesName) popupLines.push(`<strong>${speciesName}</strong>`);
-    if (commonName) popupLines.push(commonName);
-    if (family) popupLines.push(`Family: ${family}`);
-    if (origin) popupLines.push(`Origin: ${origin}`);
-    if (potentialUse) popupLines.push(`Use: ${potentialUse}`);
-    if (locationDescription) popupLines.push(locationDescription);
+    // Google Maps directions URL from current location to this lat,lng.[web:208][web:212][web:214][web:215]
+    const dest = encodeURIComponent(`${lat},${lng}`);
+    const directionsUrl =
+      `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`;
 
-    marker.bindPopup(popupLines.join("<br/>"));
+    const popupHtml = `
+      <div class="popup-content">
+        ${
+          coverImageUrl
+            ? `<img src="${coverImageUrl}" class="popup-img" alt="${speciesName || "Tree"}" />`
+            : ""
+        }
+        <div class="popup-text">
+          ${
+            speciesName
+              ? `<div><strong>${speciesName}</strong></div>`
+              : ""
+          }
+          ${
+            commonName
+              ? `<div>${commonName}</div>`
+              : ""
+          }
+          ${
+            locationInCampus
+              ? `<div class="popup-location"><strong>Location:</strong> ${locationInCampus}</div>`
+              : ""
+          }
+          <div class="popup-meta">
+            ${
+              family
+                ? `<div>Family: ${family}</div>`
+                : ""
+            }
+            ${
+              origin
+                ? `<div>Origin: ${origin}</div>`
+                : ""
+            }
+            ${
+              potentialUse
+                ? `<div>Use: ${potentialUse}</div>`
+                : ""
+            }
+          </div>
+          <div class="popup-directions">
+            <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer">
+              Get directions
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml);
     marker.addTo(treeLayer);
   });
 }
@@ -301,34 +349,23 @@ function renderMapMarkers(records) {
 // ==========================
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Grab control elements
   searchInput = document.getElementById("search-input");
   familyFilter = document.getElementById("family-filter");
   useFilter = document.getElementById("use-filter");
   originFilter = document.getElementById("origin-filter");
 
-  // Attach listeners
   if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      applyFiltersAndRender();
-    });
+    searchInput.addEventListener("input", () => applyFiltersAndRender());
   }
   if (familyFilter) {
-    familyFilter.addEventListener("change", () => {
-      applyFiltersAndRender();
-    });
+    familyFilter.addEventListener("change", () => applyFiltersAndRender());
   }
   if (useFilter) {
-    useFilter.addEventListener("change", () => {
-      applyFiltersAndRender();
-    });
+    useFilter.addEventListener("change", () => applyFiltersAndRender());
   }
   if (originFilter) {
-    originFilter.addEventListener("change", () => {
-      applyFiltersAndRender();
-    });
+    originFilter.addEventListener("change", () => applyFiltersAndRender());
   }
 
-  // Load data + initial render
   loadLocationsFromAirtable();
 });
