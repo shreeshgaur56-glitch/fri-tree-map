@@ -1,4 +1,4 @@
-/* Basic page styling */
+/* Base reset */
 
 *,
 *::before,
@@ -19,13 +19,15 @@ body {
   line-height: 1.6;
 }
 
+/* Header */
+
 .site-header {
   background-color: #e6e4df;
   border-bottom: 1px solid #d4d1ca;
 }
 
 .site-header-inner {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 0.75rem 1rem;
 }
@@ -41,14 +43,16 @@ body {
   color: #555;
 }
 
+/* Layout */
+
 main {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 2rem;
+  padding: 1.25rem 1rem 2rem;
 }
 
 .section {
-  padding: 1rem 0;
+  padding: 0.75rem 0;
 }
 
 .section-inner {
@@ -57,16 +61,40 @@ main {
   gap: 0.75rem;
 }
 
-.section-info h2 {
-  margin: 0;
+/* Controls row */
+
+.section-controls {
+  padding-bottom: 0;
 }
 
-.section-info p {
-  margin: 0;
-  color: #444;
+.controls-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-/* Map container */
+.search-input {
+  flex: 2;
+  min-width: 210px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #dcd9d5;
+  font: inherit;
+  background-color: #fbfbf9;
+}
+
+.filter-select {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #dcd9d5;
+  font: inherit;
+  background-color: #fbfbf9;
+}
+
+/* Map */
 
 .map-container {
   width: 100%;
@@ -76,7 +104,6 @@ main {
   overflow: hidden;
 }
 
-/* Leaflet default container adjustments */
 .leaflet-container {
   font: inherit;
 }
@@ -90,4 +117,18 @@ main {
   text-align: center;
   font-size: 0.85rem;
   color: #555;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input,
+  .filter-select {
+    min-width: 100%;
+  }
 }
