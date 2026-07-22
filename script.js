@@ -62,7 +62,7 @@ async function loadLocationsFromAirtable() {
   const url =
     `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/` +
     encodeURIComponent(AIRTABLE_TABLE_NAME) +
-    `?pageSize=200&view=Grid%20view`; // adjust view name if needed[web:18][web:196]
+    `?view=Grid%20view`; // adjust view name if needed[web:18][web:196]
 
   try {
     const response = await fetch(url, {
