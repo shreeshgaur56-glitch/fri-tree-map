@@ -5,7 +5,7 @@
   <title>FRI Campus Tree Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Leaflet CSS (interactive map library) -->
+  <!-- Leaflet CSS -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -18,25 +18,35 @@
   <header class="site-header">
     <div class="site-header-inner">
       <h1>FRI Campus Tree Map</h1>
-      <p>
-        Interactive map of tree locations on the Forest Research Institute campus.
-      </p>
+      <p>Search and filter tree locations across the Forest Research Institute campus.</p>
     </div>
   </header>
 
   <main>
-    <section class="section section-info">
-      <div class="section-inner">
-        <h2>Species map</h2>
-        <p>
-          This page loads tree data from Airtable and shows markers on the FRI campus
-          using Leaflet and OpenStreetMap tiles.
-        </p>
-        <p>
-          If you open this page normally, all species will be shown. If you open it with a
-          URL parameter like <code>?species=Pinus roxburghii</code>, only that species
-          will be shown (assuming the name matches your Airtable data).
-        </p>
+    <section class="section section-controls">
+      <div class="section-inner controls-row">
+        <!-- Search input -->
+        <input
+          type="text"
+          id="search-input"
+          class="search-input"
+          placeholder="Search by botanical name, common name, or location in campus"
+        />
+
+        <!-- Family filter -->
+        <select id="family-filter" class="filter-select">
+          <option value="">Family (all)</option>
+        </select>
+
+        <!-- Potential Use filter -->
+        <select id="use-filter" class="filter-select">
+          <option value="">Potential use (all)</option>
+        </select>
+
+        <!-- Origin filter -->
+        <select id="origin-filter" class="filter-select">
+          <option value="">Origin (all)</option>
+        </select>
       </div>
     </section>
 
@@ -48,15 +58,13 @@
   </main>
 
   <footer class="site-footer">
-    <p>
-      Powered by Airtable &amp; Leaflet • Hosted on GitHub Pages
-    </p>
+    <p>Powered by Airtable &amp; Leaflet • Hosted on GitHub Pages</p>
   </footer>
 
-  <!-- Leaflet JS (no integrity to avoid digest issues)[web:108] -->
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Our map logic -->
+  <!-- Our logic -->
   <script src="script.js"></script>
 </body>
 </html>
