@@ -108,6 +108,60 @@ main {
   font: inherit;
 }
 
+/* Popup layout */
+
+.popup-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.popup-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.popup-text {
+  font-size: 0.85rem;
+  max-width: 220px;
+}
+
+.popup-text strong {
+  font-size: 0.9rem;
+}
+
+.popup-location {
+  margin-top: 0.15rem;
+}
+
+.popup-meta {
+  margin-top: 0.25rem;
+  color: #555;
+}
+
+.popup-directions {
+  margin-top: 0.4rem;
+}
+
+.popup-directions a {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #01696f;
+  color: #01696f;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.popup-directions a:hover {
+  background-color: #01696f;
+  color: #f9f8f4;
+}
+
 /* Footer */
 
 .site-footer {
